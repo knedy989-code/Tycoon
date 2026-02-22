@@ -7,83 +7,57 @@
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; touch-action: none; font-family: 'Arial Black', sans-serif; height: 100vh; width: 100vw; }
         
-        /* OVERLAYS */
+        /* UI WRAPPER */
         #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5000; display: none; }
         .money-tag { position: absolute; top: 45px; left: 15px; background: #2ecc71; padding: 10px 20px; border-radius: 50px; color: white; font-size: 20px; border: 3px solid #fff; pointer-events: auto; box-shadow: 0 4px 0 #27ae60; }
         
         #top-right-ui { position: absolute; top: 45px; right: 15px; display: flex; flex-direction: column; gap: 8px; }
         .small-btn { background: rgba(0,0,0,0.8); color: white; border: 2px solid white; padding: 8px 12px; border-radius: 8px; font-size: 11px; pointer-events: auto; text-align: center; }
 
-        /* CHAT SYSTEM */
+        /* SCROLLABLE CHAT SYSTEM */
         #public-chat { 
             position: absolute; 
-            bottom: 180px; 
+            bottom: 170px; 
             left: 15px; 
-            width: 260px; 
-            background: rgba(0,0,0,0.7); 
-            border-radius: 12px; 
+            width: 280px; 
+            background: rgba(0,0,0,0.75); /* Darker for better visibility */
+            border-radius: 10px; 
             padding: 10px; 
-            pointer-events: auto;
-            border: 2px solid rgba(255,255,255,0.1);
+            pointer-events: auto; /* IMPORTANT: Allows scrolling */
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
         #chat-msgs { 
-            height: 100px; 
-            overflow-y: auto; 
+            height: 140px; 
+            overflow-y: auto; /* Enable scrolling */
             display: flex; 
-            flex-direction: column-reverse; 
+            flex-direction: column; /* Normal direction for scrolling history */
             color: white; 
-            font-size: 13px; 
+            font-size: 14px; 
             margin-bottom: 8px;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', sans-serif;
+            scrollbar-width: thin; /* For Firefox */
         }
+        /* Custom scrollbar for Chrome/Safari */
+        #chat-msgs::-webkit-scrollbar { width: 5px; }
+        #chat-msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
+
+        .chat-line { margin-bottom: 6px; word-wrap: break-word; line-height: 1.2; }
+
         #chat-input { 
-            background: rgba(255,255,255,0.2); 
-            border: 1px solid white; 
-            color: white; 
-            padding: 8px; 
-            width: 90%; 
-            border-radius: 4px;
-        }
-
-        /* FIXED JOYSTICK */
-        #joy-ui { 
-            position: absolute; 
-            bottom: 40px; 
-            left: 40px; 
-            width: 110px; 
-            height: 110px; 
             background: rgba(255,255,255,0.1); 
-            border: 3px solid rgba(255,255,255,0.4); 
-            border-radius: 50%; 
-            pointer-events: auto;
-            touch-action: none;
-        }
-        #joy-stick { 
-            position: absolute; 
-            width: 45px; 
-            height: 45px; 
-            background: white; 
-            border-radius: 50%; 
-            left: 50%; 
-            top: 50%; 
-            transform: translate(-50%, -50%); 
+            border: 1px solid rgba(255,255,255,0.5); 
+            color: white; 
+            padding: 10px; 
+            width: 90%; 
+            border-radius: 5px;
+            outline: none;
         }
 
-        #jump-btn { 
-            position: absolute; 
-            bottom: 50px; 
-            right: 40px; 
-            width: 90px; 
-            height: 90px; 
-            background: rgba(255,255,255,0.2); 
-            border: 4px solid white; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            pointer-events: auto;
-        }
+        /* FIXED JOYSTICK & JUMP */
+        #joy-ui { position: absolute; bottom: 40px; left: 40px; width: 110px; height: 110px; background: rgba(255,255,255,0.1); border: 3px solid rgba(255,255,255,0.4); border-radius: 50%; pointer-events: auto; touch-action: none; }
+        #joy-stick { position: absolute; width: 45px; height: 45px; background: white; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+        #jump-btn { position: absolute; bottom: 50px; right: 40px; width: 90px; height: 90px; background: rgba(255,255,255,0.2); border: 4px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; pointer-events: auto; }
 
         #setup-screen { position: fixed; inset: 0; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; }
         #setup-screen input { padding: 15px; border-radius: 30px; border: 2px solid #fff; font-size: 18px; margin: 20px; text-align: center; }
@@ -94,8 +68,8 @@
 <body>
 
 <div id="setup-screen">
-    <h1 style="letter-spacing:2px;">TYCOON ONLINE</h1>
-    <input type="text" id="username-input" placeholder="Player Name" maxlength="12">
+    <h1>TYCOON ONLINE</h1>
+    <input type="text" id="username-input" placeholder="Enter Name" maxlength="12">
     <button class="small-btn" style="padding:15px 40px; font-size:18px; background:#3498db;" onclick="saveNameAndStart()">PLAY</button>
 </div>
 
@@ -104,10 +78,12 @@
     <div id="top-right-ui">
         <div class="small-btn" onclick="openRename()">RENAME</div>
     </div>
+    
     <div id="public-chat">
         <div id="chat-msgs"></div>
-        <input type="text" id="chat-input" placeholder="Say something...">
+        <input type="text" id="chat-input" placeholder="Type message...">
     </div>
+
     <div id="joy-ui"><div id="joy-stick"></div></div>
     <div id="jump-btn">JUMP</div>
 </div>
@@ -141,7 +117,7 @@
         document.getElementById('ui-layer').style.display = 'block';
         if(!pubnub) connectNetwork();
         rebuildTycoon();
-        addChatMessage("SYSTEM", "Chat is online. Welcome!");
+        addChatMessage("SYSTEM", "Welcome! You can now scroll the chat.");
     };
 
     window.openRename = () => { document.getElementById('setup-screen').style.display = 'flex'; };
@@ -155,16 +131,19 @@
             });
             pubnub.subscribe({ channels: ['ty_chat'] });
             pubnub.addListener({ message: (m) => addChatMessage(m.message.user, m.message.text) });
-        } catch(e) { console.error("PubNub Error", e); }
+        } catch(e) {}
     }
 
     function addChatMessage(user, txt) {
         const chatBox = document.getElementById('chat-msgs');
         const d = document.createElement('div');
-        d.style.marginBottom = "5px";
-        const color = (user === "SYSTEM") ? "#2ecc71" : "#3498db";
+        d.className = 'chat-line';
+        const color = (user === "SYSTEM") ? "#2ecc71" : (user === playerName ? "#f1c40f" : "#3498db");
         d.innerHTML = `<b style="color:${color}">${user}:</b> ${txt}`;
-        chatBox.prepend(d);
+        chatBox.appendChild(d);
+        
+        // Auto-scroll to bottom
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function rebuildTycoon() {
@@ -193,7 +172,7 @@
         scene.add(d); droppers.push({ mesh: d, lastDrop: 0 });
     }
 
-    // FIXED JOYSTICK
+    // JOYSTICK
     let joyActive = false, moveDir = {x:0, z:0};
     const joyUi = document.getElementById('joy-ui');
     const joyStick = document.getElementById('joy-stick');

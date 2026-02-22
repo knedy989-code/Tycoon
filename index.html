@@ -2,78 +2,92 @@
 <html>
 <head>
     <title>ROBLO-TYCOON: IDK12 EDITION</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; touch-action: none; font-family: 'Arial Black', sans-serif; height: 100vh; width: 100vw; }
         
         /* UI LAYERING */
-        #gui { position: absolute; top: 45px; left: 15px; pointer-events: none; z-index: 1000; display: none; }
+        #gui { position: absolute; top: 45px; left: 15px; z-index: 1000; display: none; pointer-events: none; }
         .money-tag { background: #2ecc71; padding: 10px 20px; border-radius: 50px; color: white; font-size: 20px; border: 3px solid #fff; pointer-events: auto; box-shadow: 0 4px 0 #27ae60; }
         
         #top-right-ui { position: absolute; top: 45px; right: 15px; display: none; flex-direction: column; gap: 8px; z-index: 1000; }
-        .small-btn { background: rgba(0,0,0,0.7); color: white; border: 2px solid white; padding: 8px 12px; border-radius: 8px; font-size: 11px; pointer-events: auto; text-align: center; font-weight: bold; }
+        .small-btn { background: rgba(0,0,0,0.7); color: white; border: 2px solid white; padding: 8px 12px; border-radius: 8px; font-size: 11px; pointer-events: auto; text-align: center; }
 
         /* CHAT */
-        #public-chat { position: absolute; bottom: 160px; left: 15px; width: 230px; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 8px; display: none; pointer-events: auto; z-index: 2000; }
-        #chat-msgs { height: 90px; overflow-y: auto; display: flex; flex-direction: column-reverse; margin-bottom: 5px; color: white; font-size: 12px; }
-        #chat-input { background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); color: white; padding: 8px; width: 85%; border-radius: 4px; outline: none; }
+        #public-chat { position: absolute; bottom: 180px; left: 15px; width: 230px; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 8px; display: none; z-index: 2000; pointer-events: auto; }
+        #chat-msgs { height: 80px; overflow-y: auto; display: flex; flex-direction: column-reverse; margin-bottom: 5px; color: white; font-size: 12px; }
+        #chat-input { background: rgba(255,255,255,0.2); border: 1px solid white; color: white; padding: 8px; width: 88%; border-radius: 4px; }
 
-        /* SETUP SCREEN */
-        #setup-screen { position: fixed; inset: 0; background: rgba(26, 26, 26, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; }
+        /* FIXED JOYSTICK - ALWAYS VISIBLE */
+        #joy-zone { 
+            position: absolute; 
+            bottom: 30px; 
+            left: 30px; 
+            width: 120px; 
+            height: 120px; 
+            background: rgba(255,255,255,0.1); 
+            border: 3px solid rgba(255,255,255,0.5); 
+            border-radius: 50%; 
+            z-index: 3000; 
+            display: none; 
+            touch-action: none;
+        }
+        #joy-knob { 
+            position: absolute; 
+            width: 50px; 
+            height: 50px; 
+            background: white; 
+            border-radius: 50%; 
+            left: 35px; 
+            top: 35px; 
+            pointer-events: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        #jump-btn { 
+            position: absolute; 
+            bottom: 45px; 
+            right: 30px; 
+            width: 90px; 
+            height: 90px; 
+            background: rgba(255,255,255,0.2); 
+            border: 4px solid white; 
+            border-radius: 50%; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            z-index: 3000; 
+            font-weight: bold;
+        }
+
+        #setup-screen { position: fixed; inset: 0; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; }
         #setup-screen input { padding: 15px; border-radius: 30px; border: 2px solid #fff; font-size: 18px; margin: 20px; width: 220px; text-align: center; }
-
-        /* FIXED JOYSTICK SYSTEM */
-        #joy-container { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; display: none; z-index: 500; }
-        #joy-base { position: absolute; width: 100%; height: 100%; background: rgba(255,255,255,0.1); border: 3px solid white; border-radius: 50%; pointer-events: none; }
-        #joy-knob { position: absolute; width: 50px; height: 50px; background: white; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
         
-        #jump-btn { position: absolute; bottom: 40px; right: 40px; width: 90px; height: 90px; background: rgba(255,255,255,0.3); border: 4px solid white; border-radius: 50%; display: none; align-items: center; justify-content: center; color: white; z-index: 500; pointer-events: auto; font-size: 16px; font-weight: bold; }
-
-        #admin-console { position: absolute; top: 130px; left: 15px; width: 180px; height: 80px; background: rgba(0,0,0,0.8); border: 1px solid #f1c40f; color: #0f0; font-size: 9px; padding: 5px; display: none; z-index: 800; pointer-events: none; font-family: monospace; }
+        #admin-console { position: absolute; top: 140px; left: 15px; width: 180px; height: 60px; background: rgba(0,0,0,0.8); border: 1px solid #f1c40f; color: #0f0; font-size: 9px; padding: 5px; display: none; z-index: 800; pointer-events: none; font-family: monospace; }
         .world-label { position: absolute; transform: translate(-50%, -100%); background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 5px; font-size: 12px; pointer-events: none; border: 1px solid white; }
     </style>
 </head>
 <body>
 
 <div id="setup-screen">
-    <div style="width:60px; height:60px; background:#f1c40f; border-radius:12px; margin-bottom:10px; border:3px solid white;"></div>
     <h1>TYCOON ONLINE</h1>
-    <input type="text" id="username-input" placeholder="Player Name" maxlength="12">
+    <input type="text" id="username-input" placeholder="Enter Name" maxlength="12">
     <button class="money-tag" style="background:#3498db;" onclick="saveNameAndStart()">START</button>
 </div>
 
-<div id="gui">
-    <div class="money-tag">$<span id="cash">0</span></div>
-</div>
-
-<div id="top-right-ui">
-    <div class="small-btn" onclick="openRename()">RENAME</div>
-    <div class="small-btn" style="background:#e74c3c;" onclick="resetMyData()">RESET</div>
-</div>
-
-<div id="public-chat">
-    <div id="chat-msgs"></div>
-    <input type="text" id="chat-input" placeholder="Chat...">
-</div>
-
+<div id="gui"><div class="money-tag">$<span id="cash">0</span></div></div>
+<div id="top-right-ui"><div class="small-btn" onclick="openRename()">RENAME</div></div>
+<div id="public-chat"><div id="chat-msgs"></div><input type="text" id="chat-input" placeholder="Chat..."></div>
 <div id="admin-console"><div id="console-msgs"></div></div>
-
 <div id="labels"></div>
 <div id="jump-btn">JUMP</div>
 
-<div id="joy-container">
-    <div id="joy-base"></div>
-    <div id="joy-knob"></div>
-</div>
+<div id="joy-zone"><div id="joy-knob"></div></div>
 
 <script type="module">
     import * as THREE from 'https://cdn.skypack.dev/three@0.136.0';
-
     const CREATOR_NAME = "idk12"; 
     let cash = 0, vY = 0, playerName = "", isAdmin = false, dropperLevel = 0;
     const parts = [], droppers = [], pads = [];
@@ -93,46 +107,37 @@
     scene.add(new THREE.GridHelper(60, 30), new THREE.AmbientLight(0xffffff, 0.9));
 
     window.saveNameAndStart = () => {
-        const input = document.getElementById('username-input').value.trim();
-        if(input.length < 2) return;
-        playerName = input;
+        playerName = document.getElementById('username-input').value.trim() || "Player";
         localStorage.setItem("SavedPlayerName", playerName);
-        applyAdminStatus();
-        startGame();
-    };
-
-    window.openRename = () => { document.getElementById('setup-screen').style.display = 'flex'; };
-
-    function applyAdminStatus() {
         isAdmin = (playerName.toLowerCase() === CREATOR_NAME.toLowerCase());
-        document.getElementById('admin-console').style.display = isAdmin ? 'block' : 'none';
-        if(isAdmin) addConsoleLog("Admin: " + playerName);
-    }
-
-    function startGame() {
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('gui').style.display = 'block';
         document.getElementById('top-right-ui').style.display = 'flex';
         document.getElementById('public-chat').style.display = 'block';
         document.getElementById('jump-btn').style.display = 'flex';
-        document.getElementById('joy-container').style.display = 'block';
+        document.getElementById('joy-zone').style.display = 'block';
+        document.getElementById('admin-console').style.display = isAdmin ? 'block' : 'none';
         if(!pubnub) connectNetwork();
         rebuildTycoon();
-    }
+    };
+
+    window.openRename = () => { document.getElementById('setup-screen').style.display = 'flex'; };
 
     function connectNetwork() {
         try {
             pubnub = new PubNub({
                 publishKey: 'pub-c-4e803e5c-197e-405a-8b89-a590c7499f57',
                 subscribeKey: 'sub-c-5e589710-8597-4223-b1d5-94f31c828230',
-                userId: "u" + Math.floor(Math.random()*999)
+                userId: "u" + Math.random().toString(36).substring(7)
             });
             pubnub.subscribe({ channels: ['ty_chat'] });
-            pubnub.addListener({ message: (m) => addChatMessage(m.message.user, m.message.text) });
+            pubnub.addListener({ message: (m) => {
+                const d = document.createElement('div');
+                d.innerHTML = `<b style="color:#3498db">${m.message.user}:</b> ${m.message.text}`;
+                document.getElementById('chat-msgs').prepend(d);
+            }});
         } catch(e) {}
     }
-
-    window.resetMyData = () => { if(confirm("Reset?")) { localStorage.clear(); location.reload(); } };
 
     function rebuildTycoon() {
         pads.forEach(p => { if(p.mesh.parent) scene.remove(p.mesh); if(p.div) p.div.remove(); });
@@ -160,58 +165,47 @@
         scene.add(d); droppers.push({ mesh: d, lastDrop: 0 });
     }
 
-    function addChatMessage(user, txt) {
-        const d = document.createElement('div');
-        d.innerHTML = `<span style="color:#3498db; font-weight:bold;">${user}:</span> ${txt}`;
-        document.getElementById('chat-msgs').prepend(d);
-    }
-    function addConsoleLog(txt) {
-        if(!isAdmin) return;
-        const d = document.createElement('div'); d.innerText = "> " + txt;
-        document.getElementById('console-msgs').prepend(d);
-    }
-
-    // FIXED JOYSTICK LOGIC
+    // STRICT FIXED JOYSTICK LOGIC
     let joyActive = false, moveDir = {x:0, z:0};
-    const joyContainer = document.getElementById('joy-container');
+    const joyZone = document.getElementById('joy-zone');
     const joyKnob = document.getElementById('joy-knob');
-    const joyRect = { width: 120, height: 120 };
 
-    joyContainer.addEventListener('touchstart', (e) => {
+    joyZone.addEventListener('touchstart', (e) => {
         joyActive = true;
+        handleJoy(e.touches[0]);
     }, {passive: false});
 
     window.addEventListener('touchmove', (e) => {
         if(!joyActive) return;
-        const touch = e.touches[0];
-        const containerRect = joyContainer.getBoundingClientRect();
-        const centerX = containerRect.left + containerRect.width/2;
-        const centerY = containerRect.top + containerRect.height/2;
-        
-        let dx = touch.clientX - centerX;
-        let dy = touch.clientY - centerY;
-        
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        const maxDist = 50;
-        
-        if(dist > maxDist) {
-            dx *= maxDist/dist;
-            dy *= maxDist/dist;
-        }
-        
-        joyKnob.style.left = `calc(50% + ${dx}px)`;
-        joyKnob.style.top = `calc(50% + ${dy}px)`;
-        
-        moveDir.x = dx/maxDist;
-        moveDir.z = dy/maxDist;
+        handleJoy(e.touches[0]);
     }, {passive: false});
 
     window.addEventListener('touchend', () => {
         joyActive = false;
         moveDir = {x:0, z:0};
-        joyKnob.style.left = '50%';
-        joyKnob.style.top = '50%';
+        joyKnob.style.left = '35px';
+        joyKnob.style.top = '35px';
     });
+
+    function handleJoy(touch) {
+        const rect = joyZone.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        let dx = touch.clientX - centerX;
+        let dy = touch.clientY - centerY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const maxDist = 45;
+
+        if (dist > maxDist) {
+            dx *= maxDist / dist;
+            dy *= maxDist / dist;
+        }
+
+        joyKnob.style.left = (35 + dx) + 'px';
+        joyKnob.style.top = (35 + dy) + 'px';
+        moveDir.x = dx / maxDist;
+        moveDir.z = dy / maxDist;
+    }
 
     document.getElementById('jump-btn').addEventListener('touchstart', (e) => {
         if(player.position.y <= 1.21) vY = 0.3;
@@ -219,11 +213,8 @@
 
     document.getElementById('chat-input').addEventListener('keypress', (e) => {
         if(e.key === 'Enter' && e.target.value.trim() !== "") {
-            if (e.target.value.startsWith("/gold") && isAdmin) {
-                cash += 10000;
-            } else if (pubnub) {
-                pubnub.publish({ channel: 'ty_chat', message: { user: playerName, text: e.target.value } });
-            }
+            if (e.target.value.startsWith("/gold") && isAdmin) { cash += 10000; }
+            else if (pubnub) { pubnub.publish({ channel: 'ty_chat', message: { user: playerName, text: e.target.value } }); }
             e.target.value = ""; e.target.blur();
         }
     });
